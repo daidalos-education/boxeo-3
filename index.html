@@ -1,0 +1,1325 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Campeonato Mundial de Boxeo 360° - Ultra Dificultad</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            margin: 0;
+            padding: 0;
+            touch-action: manipulation;
+        }
+        body {
+            background-color: #121214;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            color: #ffffff;
+            overflow: hidden;
+        }
+
+        #game-container {
+            position: relative;
+            width: 100%;
+            max-width: 400px;
+            height: 600px;
+            background-color: #222;
+            display: flex;
+            flex-direction: column;
+            border: 4px solid #3a4257;
+            border-radius: 12px;
+            box-shadow: 0 12px 30px rgba(0,0,0,0.5);
+        }
+
+        /* --- ESTILOS DE LAS GRADAS Y PÚBLICO (POR DEFECTO OCULTOS) --- */
+        .stadium-stands {
+            display: none;
+            position: absolute;
+            background: #181d26;
+            z-index: 1;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.8);
+            overflow: hidden;
+        }
+        
+        /* Grada Superior */
+        .stands-top {
+            top: 0; left: 0; width: 100%; height: 22%;
+            border-bottom: 6px solid #2d3748;
+            background: repeating-linear-gradient(0deg, #1e293b, #1e293b 15px, #0f172a 15px, #0f172a 18px);
+        }
+        /* Grada Inferior */
+        .stands-bottom {
+            bottom: 0; left: 0; width: 100%; height: 22%;
+            border-top: 6px solid #2d3748;
+            background: repeating-linear-gradient(180deg, #1e293b, #1e293b 15px, #0f172a 15px, #0f172a 18px);
+        }
+        /* Grada Izquierda */
+        .stands-left {
+            top: 22%; left: 0; width: 20%; height: 56%;
+            border-right: 6px solid #2d3748;
+            background: repeating-linear-gradient(90deg, #1e293b, #1e293b 15px, #0f172a 15px, #0f172a 18px);
+        }
+        /* Grada Derecha */
+        .stands-right {
+            top: 22%; right: 0; width: 20%; height: 56%;
+            border-left: 6px solid #2d3748;
+            background: repeating-linear-gradient(270deg, #1e293b, #1e293b 15px, #0f172a 15px, #0f172a 18px);
+        }
+
+        /* Generador de Personas en la multitud */
+        .crowd-row {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            width: 100%;
+            height: 100%;
+            padding: 5px;
+        }
+        .stands-left .crowd-row, .stands-right .crowd-row {
+            flex-direction: column;
+        }
+
+        .spectator {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            position: relative;
+            animation: cheer 0.6s infinite alternate ease-in-out;
+        }
+        /* Variaciones de velocidad para simular aleatoriedad */
+        .spectator:nth-child(2n) { animation-delay: 0.15s; animation-duration: 0.5s; }
+        .spectator:nth-child(3n) { animation-delay: 0.3s; animation-duration: 0.7s; }
+        .spectator:nth-child(4n) { animation-delay: 0.45s; animation-duration: 0.4s; }
+
+        /* Colores de ropa de los espectadores */
+        .spec-1 { background-color: #ef4444; }
+        .spec-2 { background-color: #3b82f6; }
+        .spec-3 { background-color: #10b981; }
+        .spec-4 { background-color: #eab308; }
+        .spec-5 { background-color: #a855f7; }
+
+        @keyframes cheer {
+            0% { transform: translateY(0) scale(1); }
+            100% { transform: translateY(-5px) scale(1.1); }
+        }
+
+        /* --- RESPONSIVE / AJUSTES PARA PANTALLA COMPLETA ENORME --- */
+        #game-container:fullscreen {
+            max-width: 100vw !important;
+            width: 100vw !important;
+            height: 100vh !important;
+            border: none !important;
+            border-radius: 0 !important;
+            background-color: #0b0f17;
+            display: grid;
+            grid-template-rows: auto 1fr auto;
+        }
+
+        /* ACTIVAR GRADAS EN PANTALLA COMPLETA */
+        #game-container:fullscreen .stadium-stands {
+            display: block;
+        }
+
+        /* En pantalla completa el ring se vuelve un contenedor centrado rodeado de gradas */
+        #game-container:fullscreen #ring-wrapper {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            background-color: #0b111e;
+        }
+
+        #game-container:fullscreen #ring {
+            position: absolute;
+            top: 22%;
+            left: 20%;
+            width: 60%;
+            height: 56%;
+            max-width: none;
+            max-height: none;
+            margin: 0;
+            border: 12px solid #b91c1c;
+            border-radius: 4px;
+            box-shadow: 0 0 30px rgba(0, 0, 0, 0.9);
+        }
+
+        #game-container:fullscreen .screen { 
+            padding: 60px 40px 20px 40px; 
+            justify-content: center;
+            gap: 20px;
+        }
+
+        #game-container:fullscreen .character-container,
+        #game-container:fullscreen .shop-container,
+        #game-container:fullscreen .difficulty-container { 
+            max-width: 600px !important; 
+            width: 100% !important;
+            max-height: 220px !important;
+        }
+        
+        #game-container:fullscreen .char-card,
+        #game-container:fullscreen .punch-card {
+            padding: 14px 20px;
+        }
+
+        #game-container:fullscreen .btn-main { 
+            max-width: 600px !important; 
+            padding: 18px; 
+            font-size: 20px; 
+        }
+
+        #game-container:fullscreen .shop-section-title {
+            font-size: 14px;
+            margin-top: 10px;
+        }
+
+        /* HUD DE COMBATE */
+        .hud {
+            display: flex;
+            justify-content: space-between;
+            padding: 14px 12px;
+            background-color: #0f1115;
+            border-bottom: 2px solid #2f3647;
+            z-index: 10;
+        }
+        .bar-container {
+            width: 130px;
+            height: 24px;
+            background-color: #1a202c;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 2px solid #4a5568;
+            position: relative;
+        }
+        .bar {
+            height: 100%;
+            width: 100%;
+            transition: width 0.1s ease, background-color 0.1s ease;
+        }
+        #p-bar { background: linear-gradient(90deg, #3182ce, #63b3ed); }
+        #e-bar { background: linear-gradient(90deg, #e53e3e, #fc8181); }
+        
+        #round-display {
+            text-align: center;
+            font-size: 12px;
+            color: #a0aec0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+        }
+        .score { font-size: 14px; color: #ecc94b; margin-top: 1px; }
+        #timer {
+            font-size: 15px;
+            color: #fff;
+            font-weight: bold;
+            background-color: #1a202c;
+            padding: 3px 10px;
+            border-radius: 4px;
+            margin-top: 2px;
+            border: 1px solid #4a5568;
+        }
+
+        /* Contenedor adaptativo del ring por defecto */
+        #ring-wrapper {
+            flex: 1;
+            display: flex;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* El Ring básico */
+        #ring {
+            flex: 1;
+            position: relative;
+            background: radial-gradient(circle at 50% 50%, #333c4d 0%, #1a1f2c 100%);
+            border: 15px solid #b91c1c;
+            overflow: hidden;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* LUCHADORES */
+        .boxer {
+            position: absolute;
+            transform: translate(-50%, -50%);
+            width: 70px;
+            height: 70px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: transform 0.04s linear;
+        }
+        .boxer-body {
+            position: absolute;
+            width: 54px;
+            height: 26px;
+            border-radius: 50% / 40%;
+            background: radial-gradient(circle at 50% -20%, #ffdfc4 30%, #e0a980 90%);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.4);
+            z-index: 2;
+            display: flex;
+            justify-content: space-between;
+            padding: 0 4px;
+        }
+        .boxer-head {
+            position: absolute;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 50% 30%, #ffe3cc 20%, #d49b70 100%);
+            z-index: 4;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.3);
+            border: 1px solid #c58e65;
+        }
+        .boxer-head::after {
+            content: ''; position: absolute; top: 12px; left: 2px; right: 2px; bottom: 0;
+            background-color: #2d3748; border-radius: 0 0 10px 10px;
+        }
+
+        .arm {
+            position: absolute;
+            bottom: 38px;
+            width: 12px;
+            height: 16px;
+            background: linear-gradient(to top, #ffdfc4, #e0a980);
+            border: 1px solid #c58e65;
+            border-radius: 4px;
+            z-index: 1;
+            transform-origin: bottom center;
+            transition: height 0.07s cubic-bezier(0.175, 0.885, 0.32, 1.275), transform 0.07s ease, bottom 0.1s ease;
+        }
+        .arm-l { left: 4px; }
+        .arm-r { right: 4px; }
+
+        .glove {
+            position: absolute;
+            top: -12px;
+            left: -2px;
+            width: 14px;
+            height: 15px;
+            border-radius: 50% 50% 40% 40%;
+            box-shadow: 0 3px 5px rgba(0,0,0,0.4);
+        }
+
+        .boxer.punch-left .arm-l { height: 48px; transform: scaleX(1.1); z-index: 5; }
+        .boxer.punch-right .arm-r { height: 48px; transform: scaleX(1.1); z-index: 5; }
+        .boxer.blocking .arm-l { bottom: 24px; transform: translateX(10px) rotate(25deg); z-index: 5; }
+        .boxer.blocking .arm-r { bottom: 24px; transform: translateX(-10px) rotate(-25deg); z-index: 5; }
+
+        #enemy .boxer-body { background: radial-gradient(circle at 50% 120%, #991b1b 40%, #ffe3cc 45%); }
+        #enemy .glove { background: radial-gradient(circle at 35% 35%, #f87171, #b91c1c); border: 1px solid #7f1d1d; }
+
+        /* ÁRBITRO */
+        .referee {
+            position: absolute; transform: translate(-50%, -50%); width: 60px; height: 60px;
+            display: flex; justify-content: center; align-items: center; transition: transform 0.1s ease-out; z-index: 3;
+        }
+        .referee .boxer-body { background: repeating-linear-gradient(90deg, #fff, #fff 6px, #111 6px, #111 12px); width: 46px; height: 24px; }
+        .referee .boxer-head { background: radial-gradient(circle at 50% 30%, #ffd0a8 20%, #b07e56 100%); border: 1px solid #a07048; }
+        .referee .boxer-head::after { display: none; }
+        .referee .arm { background: #ffd0a8; border: 1px solid #a07048; height: 14px; width: 8px; bottom: 34px; }
+        .referee .glove { background: #ffd0a8; border: none; box-shadow: none; width: 8px; height: 8px; top: -6px; left: 0; }
+        .referee.gest-alert .arm-l, .referee.gest-alert .arm-r { height: 32px; transform: rotate(15deg); }
+        .referee.gest-alert .arm-r { transform: rotate(-15deg); }
+
+        /* Controles */
+        #controls-area {
+            height: 160px; background-color: #0f1115; display: flex;
+            justify-content: space-around; align-items: center; padding: 5px 10px; border-top: 2px solid #2f3647; z-index: 10;
+        }
+        #joystick-zone { width: 105px; height: 105px; background-color: #1a202c; border-radius: 50%; position: relative; border: 3px solid #2f3647; }
+        #joystick-stick { width: 42px; height: 42px; background-color: #4a5568; border-radius: 50%; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); box-shadow: 0 4px 10px rgba(0,0,0,0.5); border: 2px solid #48bb78; }
+        
+        .action-buttons { 
+            display: grid; 
+            grid-template-columns: repeat(2, 1fr); 
+            gap: 6px; 
+            width: 210px;
+        }
+        .action-buttons button {
+            height: 40px;
+            color: white;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: bold;
+            cursor: pointer;
+            border: 2px solid rgba(255,255,255,0.2);
+            transition: opacity 0.2s;
+        }
+        .action-buttons button:disabled {
+            opacity: 0.25;
+            cursor: not-allowed;
+            filter: grayscale(100%);
+        }
+        
+        #btn-punch { background: linear-gradient(135deg, #ef4444, #991b1b); border-color: #f87171; }
+        #btn-block { background: linear-gradient(135deg, #2563eb, #1d4ed8); border-color: #60a5fa; }
+        
+        #btn-spec-jab { background: linear-gradient(135deg, #a855f7, #6b21a8); border-color: #c084fc; }
+        #btn-spec-fire { background: linear-gradient(135deg, #f97316, #9a3412); border-color: #fb923c; }
+        #btn-spec-electric { background: linear-gradient(135deg, #eab308, #854d0e); border-color: #fde047; }
+
+        /* Pantallas */
+        .screen { 
+            position: absolute; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 100%; 
+            background-color: rgba(10, 12, 16, 0.98); 
+            display: flex; 
+            flex-direction: column; 
+            justify-content: space-evenly; 
+            align-items: center; 
+            text-align: center; 
+            padding: 55px 20px 15px 20px; 
+            border: 4px solid #2f3647; 
+            z-index: 40;
+            box-sizing: border-box;
+        }
+        
+        #game-over-screen { z-index: 50; justify-content: center; gap: 20px; }
+        #announcement-screen { background-color: rgba(15, 23, 42, 0.9); border: none; pointer-events: none; z-index: 60; justify-content: center; }
+        
+        .hidden { display: none !important; }
+        #announcement-text { font-size: 28px; color: #ecc94b; letter-spacing: 2px; }
+
+        /* CABECERA FLEXIBLE */
+        .menu-header-bar {
+            position: absolute;
+            top: 12px;
+            left: 0;
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 12px;
+            box-sizing: border-box;
+            z-index: 45;
+        }
+        
+        #game-container:fullscreen .menu-header-bar {
+            max-width: 600px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .menu-header-left {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .coin-counter {
+            background-color: #1a202c; 
+            border: 2px solid #ecc94b;
+            padding: 6px 12px; 
+            border-radius: 20px; 
+            font-size: 14px; 
+            font-weight: bold; 
+            color: #ecc94b;
+            display: flex; 
+            align-items: center; 
+            gap: 4px; 
+            box-shadow: 0 4px 8px rgba(0,0,0,0.4);
+        }
+
+        .help-btn {
+            background-color: #1e293b; 
+            border: 2px solid #3b82f6;
+            color: #60a5fa; 
+            padding: 6px 12px; 
+            border-radius: 10px; 
+            font-size: 11px; 
+            font-weight: bold;
+            cursor: pointer; 
+            box-shadow: 0 4px 8px rgba(0,0,0,0.4);
+        }
+        .help-btn:hover { background-color: #24334d; }
+
+        .fullscreen-btn {
+            background-color: #2d3748; 
+            border: 2px solid #4a5568;
+            color: #fff; 
+            padding: 6px 12px; 
+            border-radius: 10px; 
+            font-size: 11px; 
+            font-weight: bold;
+            cursor: pointer; 
+            box-shadow: 0 4px 8px rgba(0,0,0,0.4);
+        }
+        .fullscreen-btn:hover { background-color: #3b4961; }
+
+        /* MODAL INTERACTIVO DE GUÍA */
+        #help-modal {
+            position: absolute; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 100%;
+            background-color: rgba(15, 17, 23, 0.99); 
+            z-index: 110; 
+            display: flex; 
+            flex-direction: column; 
+            padding: 20px; 
+            box-sizing: border-box;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        #game-container:fullscreen #help-modal {
+            padding: 40px;
+        }
+
+        #game-container:fullscreen .help-content { 
+            max-width: 600px !important; 
+            width: 100% !important;
+            margin: 0 auto 20px auto; 
+        }
+        
+        .help-content {
+            flex: 1; 
+            overflow-y: auto; 
+            text-align: left; 
+            margin-bottom: 15px; 
+            padding-right: 5px; 
+            width: 100%;
+            max-width: 340px;
+        }
+        .help-content h3 { color: #ecc94b; font-size: 16px; margin-bottom: 10px; border-bottom: 1px solid #2f3647; padding-bottom: 4px; text-transform: uppercase;}
+        .help-content p { font-size: 12px; color: #cbd5e1; margin-bottom: 12px; line-height: 1.5; }
+        .help-content ul { list-style: none; margin-bottom: 15px; }
+        .help-content li { font-size: 12px; color: #fff; margin-bottom: 6px; display: flex; align-items: start; gap: 6px; }
+        .help-key { background-color: #4a5568; padding: 1px 6px; border-radius: 4px; font-family: monospace; font-weight: bold; color: #ecc94b; border-bottom: 2px solid #2d3748; }
+
+        /* TIENDA Y PERSONAJES */
+        .shop-section-title { font-size: 12px; color: #ecc94b; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; margin-top: 4px; }
+        
+        .character-container, .shop-container { 
+            width: 100%; 
+            max-width: 340px; 
+            max-height: 110px; 
+            overflow-y: auto; 
+            background: #0b0d11; 
+            border: 1px solid #2f3647; 
+            border-radius: 8px; 
+            padding: 6px;
+        }
+
+        .character-list { display: flex; flex-direction: column; gap: 6px; }
+        .char-card, .punch-card { background-color: #1a202c; border: 2px solid #4a5568; border-radius: 6px; padding: 8px 12px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; }
+        .char-card.selected, .punch-card.equipped { border-color: #ecc94b; background-color: #2d3748; }
+
+        .char-name, .punch-name { font-weight: bold; font-size: 13px; text-align: left; }
+        .char-stats, .punch-desc { font-size: 11px; color: #a0aec0; text-align: left; margin-top: 1px; }
+        .char-preview { width: 22px; height: 22px; border-radius: 50%; }
+
+        /* SECTOR DIFICULTAD */
+        .difficulty-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            width: 100%;
+            max-width: 340px;
+            justify-content: space-between;
+        }
+        .btn-diff {
+            flex: 1;
+            min-width: 70px;
+            padding: 8px 0;
+            font-size: 10px;
+            font-weight: bold;
+            background-color: #1a202c;
+            border: 2px solid #4a5568;
+            color: #a0aec0;
+            border-radius: 6px;
+            cursor: pointer;
+            text-transform: uppercase;
+        }
+        .btn-diff.selected[data-diff="easy"] { border-color: #48bb78; color: #48bb78; background-color: rgba(72,187,120,0.1); }
+        .btn-diff.selected[data-diff="normal"] { border-color: #ecc94b; color: #ecc94b; background-color: rgba(236,201,75,0.1); }
+        .btn-diff.selected[data-diff="hard"] { border-color: #f56565; color: #f56565; background-color: rgba(245,101,101,0.1); }
+        .btn-diff.selected[data-diff="supersayandiosgodultra"] { 
+            border-color: #ff00ea; 
+            color: #ff00ea; 
+            background-color: rgba(255, 0, 234, 0.15);
+            text-shadow: 0 0 5px #ff00ea;
+            animation: pulse 1s infinite alternate;
+        }
+
+        @keyframes pulse {
+            from { box-shadow: 0 0 2px #ff00ea; }
+            to { box-shadow: 0 0 10px #ff00ea; }
+        }
+
+        .punch-status-btn { font-size: 11px; padding: 5px 10px; border-radius: 4px; border: none; font-weight: bold; color: white; cursor: pointer; }
+        .btn-buy { background: #ecc94b; color: #111; }
+        .btn-active { background: #48bb78; cursor: default; }
+
+        .btn-main { background: linear-gradient(135deg, #3182ce, #2b6cb0); color: white; border: none; padding: 12px 0; font-size: 16px; font-weight: bold; border-radius: 25px; cursor: pointer; width: 100%; max-width: 340px; transition: transform 0.1s; }
+        .btn-main:active { transform: scale(0.98); }
+        .coin-earned-popup { font-size: 18px; color: #48bb78; font-weight: bold; margin-top: 10px; }
+    </style>
+</head>
+<body>
+
+    <div id="game-container">
+        <div id="game-menu-header" class="menu-header-bar">
+            <div class="menu-header-left">
+                <div class="coin-counter">🪙 <span id="total-coins-val">0</span></div>
+                <button id="help-toggle" class="help-btn" onclick="openHelpModal()">❓ CÓMO JUGAR</button>
+            </div>
+            <button id="fullscreen-toggle" class="fullscreen-btn" onclick="toggleFullscreen()">🔲 PANTALLA COMPLETA</button>
+        </div>
+
+        <div class="hud">
+            <div>
+                <div id="player-hud-name" style="color: #63b3ed; font-size: 13px; font-weight: bold; margin-bottom: 4px;">JUGADOR</div>
+                <div class="bar-container"><div id="p-bar" class="bar"></div></div>
+            </div>
+            <div id="round-display">
+                <span id="round-title">RDO 1/4</span>
+                <span id="round-score" class="score">0 - 0</span>
+                <span id="timer">02:00</span>
+            </div>
+            <div>
+                <div style="color: #fc8181; font-size: 13px; font-weight: bold; margin-bottom: 4px; text-align: right;">RIVAL</div>
+                <div class="bar-container"><div id="e-bar" class="bar"></div></div>
+            </div>
+        </div>
+
+        <div id="ring-wrapper">
+            
+            <div class="stadium-stands stands-top" id="stands-t"></div>
+            <div class="stadium-stands stands-bottom" id="stands-b"></div>
+            <div class="stadium-stands stands-left" id="stands-l"></div>
+            <div class="stadium-stands stands-right" id="stands-r"></div>
+
+            <div id="ring">
+                <div id="referee" class="referee">
+                    <div class="boxer-head"></div>
+                    <div class="boxer-body"></div>
+                    <div class="arm arm-l"><div class="glove"></div></div>
+                    <div class="arm arm-r"><div class="glove"></div></div>
+                </div>
+
+                <div id="player" class="boxer">
+                    <div class="boxer-head"></div>
+                    <div class="boxer-body" id="p-body-style"></div>
+                    <div class="arm arm-l"><div class="glove" id="p-glove-l"></div></div>
+                    <div class="arm arm-r"><div class="glove" id="p-glove-r"></div></div>
+                </div>
+
+                <div id="enemy" class="boxer">
+                    <div class="boxer-head"></div>
+                    <div class="boxer-body"></div>
+                    <div class="arm arm-l"><div class="glove"></div></div>
+                    <div class="arm arm-r"><div class="glove"></div></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="controls-area">
+            <div id="joystick-zone"><div id="joystick-stick"></div></div>
+            <div class="action-buttons">
+                <button id="btn-punch">GOLPE BASE</button>
+                <button id="btn-block">BLOQUEO</button>
+                <button id="btn-spec-jab" disabled>GANCHO [BLOQ]</button>
+                <button id="btn-spec-fire" disabled>FUEGO [BLOQ]</button>
+                <button id="btn-spec-electric" disabled>ELECTR [BLOQ]</button>
+            </div>
+        </div>
+
+        <div id="start-screen" class="screen">
+            <h2 style="color: #fff; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;">Selección de Boxeador</h2>
+            <div class="character-container">
+                <div class="character-list">
+                    <div class="char-card selected" onclick="selectCharacter(0, this)">
+                        <div class="char-info">
+                            <div class="char-name" style="color: #f97316;">GOKU (Ultra Instinto)</div>
+                            <div class="char-stats">Velocidad: ★★★★☆ | Divino</div>
+                        </div>
+                        <div class="char-preview" style="background: #cbd5e1; border: 2px solid #f97316;"></div>
+                    </div>
+                    <div class="char-card" onclick="selectCharacter(1, this)">
+                        <div class="char-info">
+                            <div class="char-name" style="color: #3b82f6;">VEGETA (Mega Instinto)</div>
+                            <div class="char-stats">Velocidad: ★★★★☆ | Ofensivo Brutal</div>
+                        </div>
+                        <div class="char-preview" style="background: #581c87; border: 2px solid #60a5fa;"></div>
+                    </div>
+                    <div class="char-card" onclick="selectCharacter(2, this)">
+                        <div class="char-info">
+                            <div class="char-name" style="color: #22c55e;">PICCOLO (Orange)</div>
+                            <div class="char-stats">Velocidad: ★★★☆☆ | Súper Tanque</div>
+                        </div>
+                        <div class="char-preview" style="background: #ea580c; border: 2px solid #22c55e;"></div>
+                    </div>
+                    <div class="char-card" onclick="selectCharacter(3, this)">
+                        <div class="char-info">
+                            <div class="char-name" style="color: #e879f9;">FRIEZA (Black)</div>
+                            <div class="char-stats">Velocidad: ★★★★★ | Escurridizo</div>
+                        </div>
+                        <div class="char-preview" style="background: #111827; border: 2px solid #a855f7;"></div>
+                    </div>
+                    <div class="char-card" onclick="selectCharacter(4, this)">
+                        <div class="char-info">
+                            <div class="char-name" style="color: #818cf8;">GOHAN (Bestia)</div>
+                            <div class="char-stats">Velocidad: ★★★★☆ | Letal</div>
+                        </div>
+                        <div class="char-preview" style="background: #94a3b8; border: 2px solid #818cf8;"></div>
+                    </div>
+                    <div class="char-card" onclick="selectCharacter(5, this)">
+                        <div class="char-info">
+                            <div class="char-name" style="color: #60a5fa;">TRUNKS (SSJ Rage)</div>
+                            <div class="char-stats">Velocidad: ★★★★☆ | Veloz</div>
+                        </div>
+                        <div class="char-preview" style="background: #eab308; border: 2px solid #60a5fa;"></div>
+                    </div>
+                    <div class="char-card" onclick="selectCharacter(6, this)">
+                        <div class="char-info">
+                            <div class="char-name" style="color: #4ade80;">CELL (Max)</div>
+                            <div class="char-stats">Velocidad: ★★★☆☆ | Ritmo Táctico</div>
+                        </div>
+                        <div class="char-preview" style="background: #dc2626; border: 2px solid #4ade80;"></div>
+                    </div>
+                    <div class="char-card" onclick="selectCharacter(7, this)">
+                        <div class="char-info">
+                            <div class="char-name" style="color: #f472b6;">KID BOO (Maldad)</div>
+                            <div class="char-stats">Velocidad: ★★★★★ | Caótico</div>
+                        </div>
+                        <div class="char-preview" style="background: #ec4899; border: 2px solid #f472b6;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="shop-section-title">Dificultad del Combate</div>
+            <div class="difficulty-container">
+                <button class="btn-diff" data-diff="easy" onclick="selectDifficulty('easy', this)">Fácil</button>
+                <button class="btn-diff selected" data-diff="normal" onclick="selectDifficulty('normal', this)">Normal</button>
+                <button class="btn-diff" data-diff="hard" onclick="selectDifficulty('hard', this)">Difícil</button>
+                <button class="btn-diff" data-diff="supersayandiosgodultra" onclick="selectDifficulty('supersayandiosgodultra', this)">GOD ULTRA</button>
+            </div>
+
+            <div class="shop-section-title">Tienda de Puñetazos</div>
+            <div class="shop-container" id="shop-items-list"></div>
+
+            <button class="btn-main" id="btn-start-game">ENTRAR AL RING</button>
+        </div>
+
+        <div id="help-modal" class="hidden">
+            <h2 style="color: #ecc94b; font-size: 20px; margin-bottom: 12px; text-align: center; border-bottom: 2px solid #3b82f6; padding-bottom: 6px;">📋 MANUAL DE COMBATE</h2>
+            <div class="help-content">
+                <h3>🕹️ Movimiento (360 Grados)</h3>
+                <p>Usa el <strong>Joystick virtual</strong> en la esquina inferior izquierda arrastrándolo en cualquier dirección.</p>
+                <p>💻 <strong>En PC:</strong> Puedes usar las flechas del teclado o las teclas <span class="help-key">W</span> <span class="help-key">A</span> <span class="help-key">S</span> <span class="help-key">D</span>.</p>
+                
+                <h3>🛡️ Defensa (Bloqueo)</h3>
+                <p>Mantén pulsado el botón azul <strong>"BLOQUEO"</strong> para mitigar los potentes ataques enemigos. Tu velocidad disminuye mientras bloqueas.</p>
+                <p>💻 <strong>En PC:</strong> Mantén presionada la tecla <span class="help-key">B</span>.</p>
+
+                <h3>🥊 Ataques y Puños Especiales</h3>
+                <ul>
+                    <li>• <strong>Golpe Base:</strong> Tu puño estándar y continuo. No cuesta monedas. (💻 PC: <span class="help-key">Espacio</span> o <span class="help-key">1</span>).</li>
+                    <li>• <strong>Gancho Rápido:</strong> Ráfaga ultra veloz con baja recuperación. (💻 PC: <span class="help-key">2</span>).</li>
+                    <li>• <strong>Directo de Fuego 🔥:</strong> Ataque pesado de máximo daño destructivo. (💻 PC: <span class="help-key">3</span>).</li>
+                    <li>• <strong>Impacto Eléctrico ⚡:</strong> Gran poder ofensivo y velocidad de choque equilibrada. (💻 PC: <span class="help-key">4</span>).</li>
+                </ul>
+                <p style="color: #f43f5e; font-weight: bold;">⚠️ NOTA: Los puños especiales deben adquirirse en la tienda del menú usando las monedas que ganes en tus peleas. Al comprarlos, sus respectivos botones en combate se activarán.</p>
+
+                <h3>🏆 Reglas del Campeonato</h3>
+                <p>Cada combate dura un máximo de 4 asaltos. El primero en ganar 3 asaltos se corona campeón absoluto. Cuanto mayor sea la dificultad elegida, mayor será el multiplicador de monedas obtenidas.</p>
+            </div>
+            <button class="btn-main" onclick="closeHelpModal()" style="background: linear-gradient(135deg, #10b981, #059669);">¡ENTENDIDO!</button>
+        </div>
+
+        <div id="announcement-screen" class="screen hidden">
+            <h2 id="announcement-text">ASALTO 1</h2>
+        </div>
+
+        <div id="game-over-screen" class="screen hidden">
+            <h2 id="result-text">FIN DEL COMBATE</h2>
+            <div id="coins-earned-display" class="coin-earned-popup"></div>
+            <button class="btn-main" onclick="backToMenu()">VOLVER AL MENÚ</button>
+        </div>
+    </div>
+
+    <script>
+        // --- MOTOR DE AUDIO SINTETIZADO (Web Audio API) ---
+        let audioCtx = null;
+        let bgmInterval = null;
+        let currentBgmStep = 0;
+
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+
+        function playTone(freq, type, duration, vol, slideTo = 0) {
+            if (!audioCtx) return;
+            try {
+                let osc = audioCtx.createOscillator();
+                let gainNode = audioCtx.createGain();
+                
+                osc.type = type;
+                osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+                if (slideTo > 0) {
+                    osc.frequency.exponentialRampToValueAtTime(slideTo, audioCtx.currentTime + duration);
+                }
+                
+                gainNode.gain.setValueAtTime(vol, audioCtx.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + duration);
+                
+                osc.connect(gainNode);
+                gainNode.connect(audioCtx.destination);
+                
+                osc.start();
+                osc.stop(audioCtx.currentTime + duration);
+            } catch(e) {}
+        }
+
+        function soundCampana() {
+            playTone(880, 'sine', 0.5, 0.3);
+            setTimeout(() => playTone(880, 'sine', 0.5, 0.3), 150);
+        }
+
+        function soundHitNormal() { playTone(180, 'triangle', 0.12, 0.4, 60); }
+        function soundHitJab() { playTone(320, 'triangle', 0.08, 0.4, 120); }
+        function soundHitFire() { playTone(120, 'sawtooth', 0.25, 0.3, 40); }
+        function soundHitElectric() { playTone(600, 'sawtooth', 0.15, 0.2, 200); }
+        function soundBlock() { playTone(400, 'sine', 0.08, 0.25, 300); }
+        function soundEnemyHit() { playTone(140, 'sawtooth', 0.15, 0.3, 50); }
+
+        function startBGM() {
+            stopBGM();
+            currentBgmStep = 0;
+            const notes = [110, 110, 130, 110, 165, 110, 146, 130];
+            bgmInterval = setInterval(() => {
+                if (!gameActive) return;
+                let freq = notes[currentBgmStep % notes.length];
+                playTone(freq, 'triangle', 0.15, 0.15, freq - 20);
+                if (currentBgmStep % 4 === 0) {
+                    playTone(200, 'sine', 0.05, 0.1); 
+                }
+                currentBgmStep++;
+            }, 220);
+        }
+
+        function stopBGM() {
+            if (bgmInterval) {
+                clearInterval(bgmInterval);
+                bgmInterval = null;
+            }
+        }
+
+        // --- SISTEMA DINÁMICO DE CREACIÓN DE PÚBLICO EN LAS GRADAS ---
+        function generateCrowds() {
+            const positions = ['stands-t', 'stands-b', 'stands-l', 'stands-r'];
+            positions.forEach(id => {
+                const el = document.getElementById(id);
+                if (!el) return;
+                el.innerHTML = ''; // Limpiar anteriores
+                
+                const row = document.createElement('div');
+                row.className = 'crowd-row';
+                
+                // Generar entre 12 y 20 espectadores según la grada
+                const count = (id === 'stands-t' || id === 'stands-b') ? 22 : 14;
+                for (let i = 0; i < count; i++) {
+                    const spec = document.createElement('div');
+                    const colorStyle = Math.floor(Math.random() * 5) + 1;
+                    spec.className = `spectator spec-${colorStyle}`;
+                    row.appendChild(spec);
+                }
+                el.appendChild(row);
+            });
+        }
+
+        // --- LÓGICA GENERAL DEL JUEGO ---
+        const container = document.getElementById('game-container');
+        const ring = document.getElementById('ring');
+        const playerEl = document.getElementById('player');
+        const enemyEl = document.getElementById('enemy');
+        const refereeEl = document.getElementById('referee');
+        
+        let ringBounds = { width: 370, height: 350 };
+        
+        function updateBounds() {
+            const rect = ring.getBoundingClientRect();
+            if (rect.width > 0 && rect.height > 0) ringBounds = rect;
+        }
+
+        const punchTypes = [
+            { id: 'normal', name: 'Puño Estándar', desc: 'Ataque equilibrado por defecto.', damage: 10, speedMod: 120, cost: 0, purchased: true, gloveColor: null },
+            { id: 'jab', name: 'Gancho Rápido', desc: 'Ráfaga veloz, menos recuperación.', damage: 7, speedMod: 70, cost: 150, purchased: false, gloveColor: 'linear-gradient(circle, #a855f7, #6b21a8)' },
+            { id: 'fire', name: 'Directo de Fuego 🔥', desc: 'Golpe pesado y destructivo.', damage: 18, speedMod: 180, cost: 300, purchased: false, gloveColor: 'linear-gradient(circle, #f97316, #b91c1c)' },
+            { id: 'electric', name: 'Impacto Eléctrico ⚡', desc: 'Gran poder y velocidad de choque.', damage: 14, speedMod: 100, cost: 500, purchased: false, gloveColor: 'linear-gradient(circle, #eab308, #ca8a04)' }
+        ];
+
+        let totalCoins = 0; 
+        let selectedCharIndex = 0;
+        let currentDifficulty = 'normal';
+        
+        const difficultySettings = {
+            easy:   { speedMod: 1.4, attackChance: 0.04, damage: 7, coinMultiplier: 0.7 },
+            normal: { speedMod: 2.1, attackChance: 0.08, damage: 12, coinMultiplier: 1.0 },
+            hard:   { speedMod: 2.8, attackChance: 0.14, damage: 18, coinMultiplier: 1.5 },
+            supersayandiosgodultra: { speedMod: 5.0, attackChance: 0.30, damage: 35, coinMultiplier: 3.0 }
+        };
+
+        const characters = [
+            { name: "GOKU (UI)", speed: 5.6, body: "radial-gradient(circle at 50% 120%, #cbd5e1 40%, #ffe3cc 45%)", baseGlove: "radial-gradient(circle at 35% 35%, #94a3b8, #475569)", fieldColor: "#f97316" },
+            { name: "VEGETA (EGO)", speed: 5.8, body: "radial-gradient(circle at 50% 120%, #581c87 40%, #ffe3cc 45%)", baseGlove: "radial-gradient(circle at 35% 35%, #a855f7, #3b0764)", fieldColor: "#3b82f6" },
+            { name: "PICCOLO (ORANGE)", speed: 4.8, body: "radial-gradient(circle at 50% 120%, #ea580c 40%, #ea580c 45%)", baseGlove: "radial-gradient(circle at 35% 35%, #f97316, #7c2d12)", fieldColor: "#22c55e" },
+            { name: "FRIEZA (BLACK)", speed: 6.2, body: "radial-gradient(circle at 50% 120%, #111827 40%, #a855f7 45%)", baseGlove: "radial-gradient(circle at 35% 35%, #ffffff, #000000)", fieldColor: "#e879f9" },
+            { name: "GOHAN (BEAST)", speed: 5.5, body: "radial-gradient(circle at 50% 120%, #94a3b8 40%, #94a3b8 45%)", baseGlove: "radial-gradient(circle at 35% 35%, #6366f1, #312e81)", fieldColor: "#818cf8" },
+            { name: "TRUNKS (SSJ RAGE)", speed: 5.4, body: "radial-gradient(circle at 50% 120%, #eab308 40%, #ffe3cc 45%)", baseGlove: "radial-gradient(circle at 35% 35%, #fbbf24, #78350f)", fieldColor: "#60a5fa" },
+            { name: "CELL (MAX)", speed: 4.9, body: "radial-gradient(circle at 50% 120%, #dc2626 40%, #16a34a 45%)", baseGlove: "radial-gradient(circle at 35% 35%, #ef4444, #7f1d1d)", fieldColor: "#4ade80" },
+            { name: "KID BOO", speed: 6.0, body: "radial-gradient(circle at 50% 120%, #ec4899 40%, #ffe3cc 45%)", baseGlove: "radial-gradient(circle at 35% 35%, #f472b6, #9d174d)", fieldColor: "#f472b6" }
+        ];
+
+        let player = { x: 100, y: 200, hp: 100, baseSpeed: 3.8, speed: 3.8, punching: false, blocking: false, leftToggle: true };
+        let enemy = { x: 250, y: 200, hp: 100, speed: 2.1, punching: false, leftToggle: true };
+        let ref = { x: 175, y: 100, speed: 3.5 }; 
+        
+        let keys = {};
+        let gameActive = false;
+        let loopInitiated = false;
+        let joystickActive = false;
+        let moveDir = { x: 0, y: 0 };
+
+        let currentRound = 1;
+        let playerRoundsWon = 0;
+        let enemyRoundsWon = 0;
+        let timeLeft = 120; 
+        let countdownInterval;
+
+        window.addEventListener('load', () => { 
+            updateBounds(); 
+            document.getElementById('total-coins-val').innerText = totalCoins; 
+            renderShop(); 
+            generateCrowds(); // Generación inicial del público
+        });
+        window.addEventListener('resize', updateBounds);
+        document.addEventListener('fullscreenchange', () => {
+            updateBounds();
+            generateCrowds(); // Regenera al cambiar tamaño de pantalla completa
+        });
+
+        function openHelpModal() {
+            initAudio();
+            document.getElementById('help-modal').classList.remove('hidden');
+        }
+        function closeHelpModal() {
+            document.getElementById('help-modal').classList.add('hidden');
+        }
+
+        function renderShop() {
+            const shopContainer = document.getElementById('shop-items-list');
+            shopContainer.innerHTML = '';
+
+            punchTypes.forEach(punch => {
+                if(punch.id === 'normal') return; 
+                
+                const card = document.createElement('div');
+                card.className = `punch-card ${punch.purchased ? 'owned' : ''}`;
+                
+                let actionBtn = !punch.purchased 
+                    ? `<button class="punch-status-btn btn-buy" onclick="buyPunch('${punch.id}', event)">🪙 ${punch.cost}</button>`
+                    : `<button class="punch-status-btn btn-active">ADQUIRIDO</button>`;
+
+                card.innerHTML = `
+                    <div class="punch-info">
+                        <div class="punch-name">${punch.name} <span style="color: #fc8181; font-size:9px;">(Daño: ${punch.damage})</span></div>
+                        <div class="punch-desc">${punch.desc}</div>
+                    </div>
+                    <div>${actionBtn}</div>
+                `;
+                shopContainer.appendChild(card);
+            });
+            updateGameplayButtonsState();
+        }
+
+        function buyPunch(id, event) {
+            if(event) { event.stopPropagation(); event.preventDefault(); }
+            initAudio();
+            const punch = punchTypes.find(p => p.id === id);
+            if (totalCoins >= punch.cost) {
+                totalCoins -= punch.cost;
+                punch.purchased = true;
+                document.getElementById('total-coins-val').innerText = totalCoins;
+                playTone(587, 'sine', 0.15, 0.3, 880); 
+                renderShop();
+            } else {
+                playTone(150, 'sawtooth', 0.3, 0.3); 
+                alert('¡No tienes suficientes monedas!');
+            }
+        }
+
+        function updateGameplayButtonsState() {
+            const btnJab = document.getElementById('btn-spec-jab');
+            const btnFire = document.getElementById('btn-spec-fire');
+            const btnElectric = document.getElementById('btn-spec-electric');
+
+            const jabData = punchTypes.find(p => p.id === 'jab');
+            const fireData = punchTypes.find(p => p.id === 'fire');
+            const electData = punchTypes.find(p => p.id === 'electric');
+
+            if(jabData.purchased) { btnJab.disabled = false; btnJab.innerText = "⚡ GANCHO RT"; } else { btnJab.disabled = true; btnJab.innerText = "GANCHO [BLOQ]"; }
+            if(fireData.purchased) { btnFire.disabled = false; btnFire.innerText = "🔥 FUEGO Z"; } else { btnFire.disabled = true; btnFire.innerText = "FUEGO [BLOQ]"; }
+            if(electData.purchased) { btnElectric.disabled = false; btnElectric.innerText = "⚡ CHOC ELECT"; } else { btnElectric.disabled = true; btnElectric.innerText = "ELECTR [BLOQ]"; }
+        }
+
+        function toggleFullscreen() {
+            initAudio();
+            if (!document.fullscreenElement) {
+                container.requestFullscreen().then(() => { updateBounds(); generateCrowds(); }).catch(err => { alert(`Error: ${err.message}`); });
+            } else {
+                document.exitFullscreen().then(() => { updateBounds(); generateCrowds(); });
+            }
+        }
+
+        function selectCharacter(index, element) {
+            initAudio();
+            playTone(440, 'sine', 0.05, 0.2);
+            selectedCharIndex = index;
+            document.querySelectorAll('.char-card').forEach(card => card.classList.remove('selected'));
+            element.classList.add('selected');
+        }
+
+        function selectDifficulty(diff, element) {
+            initAudio();
+            playTone(523, 'sine', 0.05, 0.2);
+            currentDifficulty = diff;
+            document.querySelectorAll('.btn-diff').forEach(btn => btn.classList.remove('selected'));
+            element.classList.add('selected');
+        }
+
+        function applyCharacterStyles() {
+            const char = characters[selectedCharIndex];
+            player.baseSpeed = char.speed;
+            player.speed = char.speed;
+
+            const nameHud = document.getElementById('player-hud-name');
+            nameHud.innerText = char.name;
+            nameHud.style.color = char.fieldColor;
+
+            document.getElementById('p-body-style').style.background = char.body;
+            document.getElementById('p-glove-l').style.background = char.baseGlove;
+            document.getElementById('p-glove-r').style.background = char.baseGlove;
+        }
+
+        function startFullChampionship() {
+            initAudio();
+            updateBounds(); 
+            generateCrowds();
+            applyCharacterStyles();
+            currentRound = 1; playerRoundsWon = 0; enemyRoundsWon = 0;
+            
+            document.getElementById('start-screen').classList.add('hidden');
+            document.getElementById('game-over-screen').classList.add('hidden');
+            document.getElementById('game-menu-header').classList.add('hidden'); 
+
+            prepareRound();
+            if (!loopInitiated) { loopInitiated = true; requestAnimationFrame(gameLoop); }
+        }
+
+        function backToMenu() {
+            gameActive = false; 
+            clearInterval(countdownInterval);
+            stopBGM();
+            document.getElementById('game-over-screen').classList.add('hidden');
+            document.getElementById('start-screen').classList.remove('hidden');
+            document.getElementById('total-coins-val').innerText = totalCoins;
+            document.getElementById('game-menu-header').classList.remove('hidden'); 
+            renderShop();
+            updateBounds();
+        }
+
+        function prepareRound() {
+            gameActive = false; clearInterval(countdownInterval); updateBounds();
+            
+            player.x = 60; player.y = ringBounds.height / 2; player.hp = 100; player.punching = false; player.blocking = false;
+            playerEl.classList.remove('blocking');
+            enemy.x = ringBounds.width - 60; enemy.y = ringBounds.height / 2; enemy.hp = 100; enemy.punching = false;
+            enemy.speed = difficultySettings[currentDifficulty].speedMod;
+            ref.x = ringBounds.width / 2; ref.y = 50;
+
+            updateHP(); timeLeft = 120; updateTimerDisplay();
+
+            document.getElementById('round-title').innerText = `RDO ${currentRound}/4`;
+            document.getElementById('round-score').innerText = `${playerRoundsWon} - ${enemyRoundsWon}`;
+
+            const announceScreen = document.getElementById('announcement-screen');
+            document.getElementById('announcement-text').innerText = currentDifficulty === 'supersayandiosgodultra' ? '¡¡DIOS ULTRA!!' : `ASALTO ${currentRound}`;
+            announceScreen.classList.remove('hidden');
+
+            setTimeout(() => {
+                announceScreen.classList.add('hidden');
+                gameActive = true;
+                soundCampana(); 
+                startBGM();    
+                startTimer();
+            }, 1500);
+        }
+
+        function startTimer() {
+            countdownInterval = setInterval(() => {
+                if (!gameActive) return;
+                timeLeft--; updateTimerDisplay();
+                if (timeLeft <= 0) { clearInterval(countdownInterval); endRound(player.hp > enemy.hp); }
+            }, 1000);
+        }
+
+        function updateTimerDisplay() {
+            let minutes = Math.floor(timeLeft / 60); let seconds = timeLeft % 60;
+            document.getElementById('timer').innerText = `${minutes < 10 ? "0" + minutes : minutes}:${seconds < 10 ? "0" + seconds : seconds}`;
+        }
+
+        function updateHP() {
+            document.getElementById('p-bar').style.width = player.hp + "%";
+            document.getElementById('e-bar').style.width = enemy.hp + "%";
+        }
+
+        function executePunchAction(punchId) {
+            if (!gameActive || player.punching || player.blocking) return;
+            
+            const pType = punchTypes.find(p => p.id === punchId);
+            if (!pType || !pType.purchased) return; 
+            
+            player.punching = true;
+            
+            if(punchId === 'normal') soundHitNormal();
+            else if(punchId === 'jab') soundHitJab();
+            else if(punchId === 'fire') soundHitFire();
+            else if(punchId === 'electric') soundHitElectric();
+
+            const char = characters[selectedCharIndex];
+            const currentGloveColor = pType.gloveColor ? pType.gloveColor : char.baseGlove;
+            document.getElementById('p-glove-l').style.background = currentGloveColor;
+            document.getElementById('p-glove-r').style.background = currentGloveColor;
+
+            let sideClass = player.leftToggle ? 'punch-left' : 'punch-right';
+            player.leftToggle = !player.leftToggle;
+            playerEl.classList.add(sideClass);
+
+            let dx = enemy.x - player.x; let dy = enemy.y - player.y; let dist = Math.sqrt(dx*dx + dy*dy);
+            if (dist < 75) {
+                enemy.hp -= pType.damage; 
+                enemyEl.style.opacity = "0.6";
+                setTimeout(() => { enemyEl.style.opacity = "1"; }, 100);
+                if (enemy.hp <= 0) { enemy.hp = 0; endRound(true); }
+                updateHP();
+            }
+            
+            setTimeout(() => { 
+                playerEl.classList.remove(sideClass); 
+                player.punching = false; 
+                document.getElementById('p-glove-l').style.background = char.baseGlove;
+                document.getElementById('p-glove-r').style.background = char.baseGlove;
+            }, pType.speedMod);
+        }
+
+        function setPlayerBlocking(isBlocking) {
+            if (!gameActive) return;
+            player.blocking = isBlocking;
+            if (isBlocking) {
+                player.speed = player.baseSpeed * 0.6; 
+                playerEl.classList.add('blocking');
+            } else {
+                player.speed = player.baseSpeed;
+                playerEl.classList.remove('blocking');
+            }
+        }
+
+        function enemyPunch() {
+            if (enemy.punching) return;
+            enemy.punching = true;
+            let sideClass = enemy.leftToggle ? 'punch-left' : 'punch-right';
+            enemy.leftToggle = !enemy.leftToggle;
+            enemyEl.classList.add(sideClass);
+
+            let dx = player.x - enemy.x; let dy = player.y - enemy.y; let dist = Math.sqrt(dx*dx + dy*dy);
+            if (dist < 75) {
+                if (player.blocking) {
+                    soundBlock(); 
+                    const pBar = document.getElementById('p-bar');
+                    pBar.style.backgroundColor = "#ecc94b";
+                    setTimeout(() => { pBar.style.backgroundColor = ""; }, 150);
+                } else {
+                    soundEnemyHit(); 
+                    player.hp -= difficultySettings[currentDifficulty].damage;
+                    playerEl.style.opacity = "0.6";
+                    setTimeout(() => { playerEl.style.opacity = "1"; }, 100);
+                    if (player.hp <= 0) { player.hp = 0; endRound(false); }
+                    updateHP();
+                }
+            }
+            setTimeout(() => { enemyEl.classList.remove(sideClass); enemy.punching = false; }, 120);
+        }
+
+        function endRound(playerWonThisRound) {
+            gameActive = false; clearInterval(countdownInterval);
+            stopBGM();
+            soundCampana(); 
+
+            if (playerWonThisRound) playerRoundsWon++; else enemyRoundsWon++;
+            document.getElementById('round-score').innerText = `${playerRoundsWon} - ${enemyRoundsWon}`;
+            
+            if (playerRoundsWon === 3 || enemyRoundsWon === 3 || currentRound >= 4) { 
+                endChampionship(); 
+            } else {
+                currentRound++; 
+                setTimeout(prepareRound, 1000);
+            }
+        }
+
+        function endChampionship() {
+            gameActive = false; clearInterval(countdownInterval); stopBGM();
+            const gameOverScreen = document.getElementById('game-over-screen');
+            const resultText = document.getElementById('result-text');
+            const coinsDisplay = document.getElementById('coins-earned-display');
+            
+            let coinsEarned = 0;
+            let diffMultiplier = difficultySettings[currentDifficulty].coinMultiplier;
+
+            if (playerRoundsWon > enemyRoundsWon) { 
+                playTone(440, 'sine', 0.2, 0.3, 880);
+                resultText.innerText = currentDifficulty === 'supersayandiosgodultra' ? "¡HAS SUPERADO A UN DIOS! 🌌" : "¡VICTORIA POR K.O. TÉCNICO! 🏆"; 
+                resultText.style.color = currentDifficulty === 'supersayandiosgodultra' ? "#ff00ea" : "#63b3ed"; 
+                coinsEarned = Math.floor((Math.random() * (250 - 150 + 1)) + 150); 
+            } else if (enemyRoundsWon > playerRoundsWon) { 
+                playTone(200, 'sawtooth', 0.5, 0.3, 70);
+                resultText.innerText = "DERROTA POR K.O. TÉCNICO 🥊"; resultText.style.color = "#fc8181"; 
+                coinsEarned = Math.floor((Math.random() * (40 - 15 + 1)) + 15);   
+            } else { 
+                playTone(300, 'triangle', 0.4, 0.3);
+                resultText.innerText = "COMBATE EMPATADO"; resultText.style.color = "#ecc94b"; 
+                coinsEarned = Math.floor((Math.random() * (90 - 50 + 1)) + 50);  
+            }
+
+            coinsEarned = Math.floor(coinsEarned * diffMultiplier);
+            totalCoins += coinsEarned;
+            coinsDisplay.innerText = `+🪙 ${coinsEarned} Monedas ganadas`;
+            gameOverScreen.classList.remove('hidden');
+        }
+
+        function gameLoop() {
+            if (gameActive) {
+                let limitX = ringBounds.width; let limitY = ringBounds.height;
+
+                if (keys['b'] || keys['B']) { 
+                    if(!player.blocking) setPlayerBlocking(true); 
+                } else if (!joystickActive && !document.getElementById('btn-block').classList.contains('active')) { 
+                    if(player.blocking) setPlayerBlocking(false); 
+                }
+
+                if (keys['ArrowUp'] || keys['w'] || keys['W']) moveDir.y = -1;
+                else if (keys['ArrowDown'] || keys['s'] || keys['S']) moveDir.y = 1;
+                else if (!joystickActive) moveDir.y = 0;
+
+                if (keys['ArrowLeft'] || keys['a'] || keys['A']) moveDir.x = -1;
+                else if (keys['ArrowRight'] || keys['d'] || keys['D']) moveDir.x = 1;
+                else if (!joystickActive) moveDir.x = 0;
+
+                player.x += moveDir.x * player.speed; player.y += moveDir.y * player.speed;
+                player.x = Math.max(25, Math.min(limitX - 25, player.x));
+                player.y = Math.max(25, Math.min(limitY - 25, player.y));
+
+                let edx = player.x - enemy.x; let edy = player.y - enemy.y; let edist = Math.sqrt(edx*edx + edy*edy);
+                let anglePlayer = Math.atan2(-edy, -edx);
+                playerEl.style.transform = `translate(-50%, -50%) rotate(${anglePlayer + Math.PI/2}rad)`;
+
+                if (edist > 54) { enemy.x += (edx / edist) * enemy.speed; enemy.y += (edy / edist) * enemy.speed; }
+                else { 
+                    if (Math.random() < difficultySettings[currentDifficulty].attackChance) enemyPunch(); 
+                }
+                
+                let angleEnemy = Math.atan2(edy, edx);
+                enemyEl.style.transform = `translate(-50%, -50%) rotate(${angleEnemy + Math.PI/2}rad)`;
+
+                let midX = (player.x + enemy.x) / 2; let midY = (player.y + enemy.y) / 2;
+                let targetAngle = Math.atan2(ref.y - midY, ref.x - midX);
+                let idealDist = 95;
+                let tX = midX + Math.cos(targetAngle) * idealDist;
+                let tY = midY + Math.sin(targetAngle) * idealDist;
+
+                tX = Math.max(30, Math.min(limitX - 30, tX)); tY = Math.max(30, Math.min(limitY - 30, tY));
+                ref.x += (tX - ref.x) * 0.07; ref.y += (tY - ref.y) * 0.07;
+
+                let rdx = midX - ref.x; let rdy = midY - ref.y; let angleRef = Math.atan2(rdy, rdx);
+                if (refereeEl) {
+                    refereeEl.style.transform = `translate(-50%, -50%) rotate(${angleRef + Math.PI/2}rad)`;
+                    if (edist < 58) refereeEl.className = "referee gest-alert"; else refereeEl.className = "referee";
+                    refereeEl.style.left = ref.x + "px"; refereeEl.style.top = ref.y + "px";
+                }
+
+                playerEl.style.left = player.x + "px"; playerEl.style.top = player.y + "px";
+                enemyEl.style.left = enemy.x + "px"; enemyEl.style.top = enemy.y + "px";
+            }
+            requestAnimationFrame(gameLoop);
+        }
+
+        window.addEventListener('keydown', (e) => { 
+            initAudio();
+            keys[e.key] = true; 
+            if (e.key === " " || e.key === "Spacebar" || e.key === "1") executePunchAction('normal'); 
+            if (e.key === "2") executePunchAction('jab'); 
+            if (e.key === "3") executePunchAction('fire'); 
+            if (e.key === "4") executePunchAction('electric'); 
+        });
+        window.addEventListener('keyup', (e) => { 
+            keys[e.key] = false; 
+            if (e.key === "b" || e.key === "B") setPlayerBlocking(false);
+        });
+
+        const zone = document.getElementById('joystick-zone');
+        const stick = document.getElementById('joystick-stick');
+        function handleJoystick(e) {
+            e.preventDefault(); joystickActive = true; initAudio();
+            const touch = e.touches ? e.touches[0] : e; const rect = zone.getBoundingClientRect();
+            let jx = touch.clientX - (rect.left + rect.width / 2); let jy = touch.clientY - (rect.top + rect.height / 2);
+            let distance = Math.min(35, Math.sqrt(jx*jx + jy*jy)); let angle = Math.atan2(jy, jx);
+            stick.style.left = `calc(50% + ${Math.cos(angle) * distance}px)`; stick.style.top = `calc(50% + ${Math.sin(angle) * distance}px)`;
+            moveDir.x = (Math.cos(angle) * distance) / 35; moveDir.y = (Math.sin(angle) * distance) / 35;
+        }
+        zone.addEventListener('touchstart', handleJoystick, {passive: false}); 
+        zone.addEventListener('touchmove', handleJoystick, {passive: false});
+        zone.addEventListener('touchend', () => { joystickActive = false; stick.style.left = "50%"; stick.style.top = "50%"; moveDir = { x: 0, y: 0 }; });
+        
+        const startBtn = document.getElementById('btn-start-game');
+        startBtn.addEventListener('click', startFullChampionship);
+        startBtn.addEventListener('touchstart', (e) => { e.preventDefault(); startFullChampionship(); });
+
+        document.getElementById('btn-punch').addEventListener('click', () => executePunchAction('normal'));
+        document.getElementById('btn-punch').addEventListener('touchstart', (e) => { e.preventDefault(); executePunchAction('normal'); });
+
+        document.getElementById('btn-spec-jab').addEventListener('click', () => executePunchAction('jab'));
+        document.getElementById('btn-spec-jab').addEventListener('touchstart', (e) => { e.preventDefault(); executePunchAction('jab'); });
+
+        document.getElementById('btn-spec-fire').addEventListener('click', () => executePunchAction('fire'));
+        document.getElementById('btn-spec-fire').addEventListener('touchstart', (e) => { e.preventDefault(); executePunchAction('fire'); });
+
+        document.getElementById('btn-spec-electric').addEventListener('click', () => executePunchAction('electric'));
+        document.getElementById('btn-spec-electric').addEventListener('touchstart', (e) => { e.preventDefault(); executePunchAction('electric'); });
+
+        const blockBtn = document.getElementById('btn-block');
+        function startBlock(e) { e.preventDefault(); initAudio(); blockBtn.classList.add('active'); setPlayerBlocking(true); }
+        function endBlock(e) { e.preventDefault(); blockBtn.classList.remove('active'); setPlayerBlocking(false); }
+        blockBtn.addEventListener('mousedown', startBlock);
+        blockBtn.addEventListener('mouseup', endBlock);
+        blockBtn.addEventListener('touchstart', startBlock, {passive: false});
+        blockBtn.addEventListener('touchend', endBlock);
+
+        setTimeout(updateBounds, 200);
+    </script>
+</body>
+</html>
